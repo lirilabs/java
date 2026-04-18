@@ -1,27 +1,23 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Railway Java App</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Java API Test</title>
 </head>
-<body>
+<body style="text-align:center;margin-top:100px;font-family:Arial;">
 
-<h1>Java + Railway 🚀</h1>
-<button onclick="loadData()">Call Backend</button>
+<h1>Frontend Page 🌐</h1>
+
+<button onclick="callAPI()">Click Me</button>
 
 <p id="result">Waiting...</p>
 
 <script>
-async function loadData() {
+async function callAPI() {
     try {
-        const res = await fetch('/api');
+        const res = await fetch('/api'); // same domain
+        const text = await res.text();
 
-        if (!res.ok) {
-            throw new Error("Status: " + res.status);
-        }
-
-        const data = await res.json();
-        document.getElementById("result").innerText = data.message;
+        document.getElementById("result").innerText = text;
 
     } catch (err) {
         document.getElementById("result").innerText = "Error: " + err.message;
