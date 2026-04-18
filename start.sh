@@ -1,7 +1,9 @@
 #!/bin/bash
 
-echo "Compiling Java..."
-javac Main.java
+echo "Compiling..."
 
-echo "Starting server..."
-java Main
+javac --add-modules jdk.httpserver Main.java
+
+echo "Running..."
+
+java --add-modules jdk.httpserver Main
