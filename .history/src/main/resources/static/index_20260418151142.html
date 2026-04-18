@@ -563,11 +563,9 @@
         let filter = 'ALL';
         let ws = null;
 
-        // Dynamic URL detection for production hosting
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = window.location.host;
-        const WS_URL = `${protocol}//${host}/ws/stocks/websocket`;
-        const REST_URL = `${window.location.protocol}//${host}/api/stocks`;
+        // PATH MUST MATCH StockWebSocketHandler mapping in Java config
+        const WS_URL = 'ws://localhost:8080/ws/stocks/websocket';
+        const REST_URL = 'http://localhost:8080/api/stocks';
 
         connect();
 

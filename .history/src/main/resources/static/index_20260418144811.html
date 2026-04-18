@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>NSE Live Dashboard</title>
+    <style>
+        :root {
+            --bg: #0d0f14;
+            --surface: #161a23;
+            --card: #1c2130;
+            --border: #2a3045;
+            --text: #e8ecf4;
+            --muted: #8892a8;
+            --up: #22c55e;
+            --dn: #ef4444;
+            --accent: #3b82f6;
+            --accent-soft: #1e3a5f;
+            --font: 'Segoe UI', system-ui, sans-serif;
+            --mono: 'Cascadia Code', 'Fira Mono', monospace;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; min-height: 100vh; }
+
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 24px;
+            display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+            position: sticky; top: 0; z-index: 100;
+        }
+        .brand { display: flex; align-items: center; gap: 10px; }
+        .live-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--up); animation: blink 1.4s infinite; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+        .brand h1 { font-size: 17px; font-weight: 600; letter-spacing: -.3px; }
+        .brand p  { font-size: 11px; color: var(--muted); }
+        .header-right { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); }
+        .conn-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .conn-badge.live  { background: #14532d; color: #4ade80; }
+        .conn-badge.error { background: #450a0a; color: #f87171; }
+        .conn-badge.wait  { background: #1e3a5f; color: #93c5fd; }
+
+        main { padding: 20px 24px; max-width: 1600px; margin: 0 auto; }
+
+        .metrics { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
+        .metric { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; }
+        .metric label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; display: block; margin-bottom: 6px; }
+        .metric .val  { font-size: 26px; font-weight: 700; letter-spacing: -.5px; }
+        .metric .val.up { color: var(--up); }
+        .metric .val.dn { color: var(--dn); }
+
+        .controls { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+        .search {
+            flex: 1; min-width: 180px;
+            background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+            padding: 8px 14px; color: var(--text); font-size: 13px; outline: none;
+        }
+        .search:focus { border-color: var(--accent); }
+        .search::placeholder { color: var(--muted); }
+        .btn {
+            padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);
+            background: var(--card); color: var(--muted); font-size: 12px; cursor: pointer;
+            white-space: nowrap; transition: all .15s;
+        }
+        .btn:hover { border-color: var(--accent); color: var(--text); }
+        .btn.active { background: var(--accent-soft); border-color: var(--accent); color: #93c5fd; }
+
+        .table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: auto; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        thead th {
+            background: var(--surface); padding: 10px 14px;
+            font-size: 11px; font-weight: 600; color: var(--muted);
+            text-transform: uppercase; letter-spacing: .06em;
+            text-align: left; cursor: pointer; user-select: none;
+            border-bottom: 1px solid var(--border); white-space: nowrap;
+        }
+        thead th:hover { color: var(--text); }
+        thead th.sorted { color: var(--accent); }
+        tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: rgba(59,130,246,.06); }
+        tbody td { padding: 10px 14px; vertical-align: middle; }
+        .sym-cell .sym  { font-weight: 600; font-size: 13px; }
+        .sym-cell .ikey { font-size: 10px; color: var(--muted); font-family: var(--mono); margin-top: 2px; }
+        .num { font-variant-numeric: tabular-nums; }
+        .up  { color: var(--up); }
+        .dn  { color: var(--dn); }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+        .badge.UP { background: #14532d; color: #4ade80; }
+        .badge.DN { background: #450a0a; color: #f87171; }
+        .spark { display: flex; align-items: flex-end; gap: 1.5px; height: 22px; }
+        .spark span { width: 4px; border-radius: 1px; transition: height .4s; }
+
+        .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+        .panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+        .panel-head { padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; display: flex; justify-content: space-between; align-items: center; }
+        .mini-row { display: flex; align-items: center; padding: 9px 16px; border-bottom: 1px solid var(--border); gap: 10px; }
+        .bar-bg { flex: 2; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+        .bar-fill { height: 100%; border-radius: 2px; transition: width .4s; }
+        .bar-fill.up { background: var(--up); }
+        .bar-fill.dn { background: var(--dn); }
+        .mini-pct { font-size: 13px; font-weight: 600; min-width: 60px; text-align: right; }
+
+        .key-panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+        .key-head { padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+        .key-search { flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px; color: var(--text); font-size: 12px; outline: none; }
+        .key-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); }
+        .key-item { padding: 11px 16px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); transition: background .1s; }
+        .key-item:hover { background: rgba(59,130,246,.06); }
+        .key-item .ks { font-weight: 600; font-size: 13px; margin-bottom: 3px; }
+        .key-item .kv { font-size: 11px; color: var(--muted); font-family: var(--mono); word-break: break-all; }
+        .copy-btn { margin-top: 5px; font-size: 10px; padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; }
+        .empty { text-align: center; padding: 3rem; color: var(--muted); font-size: 13px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="brand">
+        <div class="live-dot" id="liveDot"></div>
+        <div>
+            <h1>NSE Live Dashboard</h1>
+            <p>Upstox Market Feed · Spring Boot · WebSocket</p>
+        </div>
+    </div>
+    <div class="header-right">
+        <span id="lastTs"></span>
+        <span class="conn-badge wait" id="connBadge">Connecting…</span>
+    </div>
+</header>
+
+<main>
+    <div class="metrics">
+        <div class="metric"><label>Stocks Tracked</label><div class="val" id="mTotal">—</div></div>
+        <div class="metric"><label>Gainers</label><div class="val up" id="mUp">—</div></div>
+        <div class="metric"><label>Losers</label><div class="val dn" id="mDn">—</div></div>
+        <div class="metric"><label>Avg Change %</label><div class="val" id="mAvg">—</div></div>
+        <div class="metric"><label>A/D Ratio (ADR)</label><div class="val" id="mAdr">—</div></div>
+    </div>
+
+    <div class="controls">
+        <input class="search" id="searchBox" placeholder="Search symbol or instrument key…" oninput="applyFilters()">
+        <button class="btn active" id="btnAll"   onclick="setFilter('ALL')">All</button>
+        <button class="btn"        id="btnUp"    onclick="setFilter('UP')">Gainers</button>
+        <button class="btn"        id="btnDn"    onclick="setFilter('DN')">Losers</button>
+        <button class="btn"        id="btnTop10" onclick="setFilter('TOP10')">Top 10</button>
+        <button class="btn"        onclick="manualRefresh()">↻ Refresh</button>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+            <tr>
+                <th onclick="sortBy('symbol')">Symbol <span id="s-symbol"></span></th>
+                <th onclick="sortBy('currentPrice')">LTP <span id="s-currentPrice"></span></th>
+                <th onclick="sortBy('change')">Change <span id="s-change"></span></th>
+                <th onclick="sortBy('changePercent')">Chg % <span id="s-changePercent">↓</span></th>
+                <th onclick="sortBy('roc')">ROC % <span id="s-roc"></span></th>
+                <th onclick="sortBy('atr')">ATR <span id="s-atr"></span></th>
+                <th onclick="sortBy('adx')">ADX <span id="s-adx"></span></th>
+                <th onclick="sortBy('highPrice')">High <span id="s-highPrice"></span></th>
+                <th onclick="sortBy('lowPrice')">Low <span id="s-lowPrice"></span></th>
+                <th onclick="sortBy('openPrice')">Open <span id="s-openPrice"></span></th>
+                <th onclick="sortBy('closePrice')">Prev Close <span id="s-closePrice"></span></th>
+                <th onclick="sortBy('volume')">Volume <span id="s-volume"></span></th>
+                <th>Status</th>
+                <th>Trend</th>
+            </tr>
+            </thead>
+            <tbody id="tBody"></tbody>
+        </table>
+    </div>
+
+    <div class="panels">
+        <div class="panel">
+            <div class="panel-head">Top Gainers <span id="gCount"></span></div>
+            <div id="gList"></div>
+        </div>
+        <div class="panel">
+            <div class="panel-head">Top Losers <span id="lCount"></span></div>
+            <div id="lList"></div>
+        </div>
+    </div>
+
+    <div class="key-panel">
+        <div class="key-head">
+            Instrument Keys
+            <input class="key-search" id="keySearch" placeholder="Filter…" oninput="renderKeys()">
+        </div>
+        <div class="key-grid" id="keyGrid"></div>
+    </div>
+</main>
+
+<script>
+    let all = [];
+    let history = {};
+    let sortField = 'changePercent';
+    let sortDir   = -1;
+    let filter    = 'ALL';
+    let ws        = null;
+
+    // PATH MUST MATCH StockWebSocketHandler mapping in Java config
+    const WS_URL   = 'ws://localhost:8080/ws/stocks/websocket';
+    const REST_URL = 'http://localhost:8080/api/stocks';
+
+    connect();
+
+    // Safety fallback: if WebSocket isn't live (state 1), pull data via REST every 8s
+    setInterval(() => {
+        if (!ws || ws.readyState !== 1) {
+            fetchRest();
+        }
+    }, 8000);
+
+    function connect() {
+        badge('wait', 'Connecting…');
+        try {
+            // Close existing if necessary
+            if (ws) { ws.close(); }
+
+            ws = new WebSocket(WS_URL);
+
+            ws.onopen    = () => {
+                badge('live', 'Live');
+                fetchRest(); // Load initial snapshot data immediately on connect
+            };
+
+            ws.onmessage = e => {
+                const data = JSON.parse(e.data);
+                ingest(data);
+                // Force "Live" status if we are receiving socket messages
+                if (document.getElementById('connBadge').textContent !== 'Live') {
+                    badge('live', 'Live');
+                }
+            };
+
+            ws.onerror   = (err) => {
+                console.error("WS Error:", err);
+                fetchRest();
+            };
+
+            ws.onclose   = () => {
+                badge('error', 'Reconnecting…');
+                setTimeout(connect, 4000);
+            };
+        } catch (err) {
+            console.error("Connection attempt failed:", err);
+            fetchRest();
+        }
+    }
+
+    function fetchRest() {
+        // Only mark badge as REST if we aren't already live via WebSocket
+        if (!ws || ws.readyState !== 1) {
+            badge('wait', 'REST…');
+        }
+
+        fetch(REST_URL)
+            .then(r => r.json())
+            .then(d => {
+                if (d && d.length) {
+                    ingest(d);
+                    // Only update badge to REST if WS isn't currently alive
+                    if (!ws || ws.readyState !== 1) {
+                        badge('live', 'REST');
+                    }
+                } else {
+                    if (!ws || ws.readyState !== 1) badge('error','No data');
+                }
+            })
+            .catch(() => {
+                if (!ws || ws.readyState !== 1) badge('error', 'Offline');
+            });
+    }
+
+    function manualRefresh() { fetchRest(); }
+
+    function ingest(data) {
+        if (!Array.isArray(data) || !data.length) return;
+        all = data;
+        data.forEach(s => {
+            if (!history[s.symbol]) history[s.symbol] = [];
+            history[s.symbol].push(s.currentPrice);
+            if (history[s.symbol].length > 10) history[s.symbol].shift();
+        });
+        updateMetrics();
+        applyFilters();
+        renderMiniPanels();
+        renderKeys();
+        document.getElementById('lastTs').textContent = new Date().toLocaleTimeString();
+    }
+
+    function updateMetrics() {
+        const up  = all.filter(s => s.status === 'UP').length;
+        const dn  = all.filter(s => s.status === 'DOWN').length;
+        const avg = all.reduce((a, s) => a + (s.changePercent || 0), 0) / (all.length || 1);
+        const adr = dn === 0 ? up.toFixed(2) : (up / dn).toFixed(2);
+
+        document.getElementById('mTotal').textContent = all.length;
+        document.getElementById('mUp').textContent    = up;
+        document.getElementById('mDn').textContent    = dn;
+
+        const adrEl = document.getElementById('mAdr');
+        adrEl.textContent = adr;
+        adrEl.className   = 'val ' + (adr >= 1 ? 'up' : 'dn');
+
+        const avgEl = document.getElementById('mAvg');
+        avgEl.textContent = (avg >= 0 ? '+' : '') + avg.toFixed(2) + '%';
+        avgEl.className   = 'val ' + (avg >= 0 ? 'up' : 'dn');
+    }
+
+    function setFilter(f) {
+        filter = f;
+        ['All','Up','Dn','Top10'].forEach(x => {
+            const btn = document.getElementById('btn'+x);
+            if(btn) btn.classList.remove('active');
+        });
+        const activeBtn = document.getElementById('btn'+f.charAt(0)+f.slice(1).toLowerCase().replace('top10','Top10'));
+        if(activeBtn) activeBtn.classList.add('active');
+        applyFilters();
+    }
+
+    function applyFilters() {
+        const q = document.getElementById('searchBox').value.toLowerCase();
+        let list = [...all];
+        if (q) list = list.filter(s => s.symbol.toLowerCase().includes(q) || (s.instrumentKey||'').toLowerCase().includes(q));
+        if (filter === 'UP')      list = list.filter(s => s.status === 'UP');
+        else if (filter === 'DN') list = list.filter(s => s.status === 'DOWN');
+        else if (filter === 'TOP10') list = [...list].sort((a,b) => b.changePercent - a.changePercent).slice(0,10);
+
+        list.sort((a,b) => {
+            const valA = a[sortField];
+            const valB = b[sortField];
+            if (valA === valB) return 0;
+            return sortDir * (valA > valB ? 1 : -1);
+        });
+        renderTable(list);
+    }
+
+    function sortBy(f) {
+        sortDir = (sortField === f) ? -sortDir : -1;
+        sortField = f;
+        document.querySelectorAll('thead th').forEach(th => th.classList.remove('sorted'));
+        const sp = document.getElementById('s-'+f);
+        if (sp) {
+            sp.closest('th').classList.add('sorted');
+            sp.textContent = sortDir > 0 ? '↑' : '↓';
+        }
+        applyFilters();
+    }
+
+    function fmt(n)  { return typeof n === 'number' ? n.toLocaleString('en-IN', {minimumFractionDigits:2,maximumFractionDigits:2}) : '—'; }
+    function fmtV(n) { if (n>=1e7) return (n/1e7).toFixed(2)+'Cr'; if (n>=1e5) return (n/1e5).toFixed(2)+'L'; return n.toLocaleString('en-IN'); }
+
+    function spark(sym, up) {
+        const h = history[sym] || [];
+        if (!h.length) return '<div class="spark"></div>';
+        const mn = Math.min(...h), mx = Math.max(...h), rng = mx-mn||1;
+        const color = up ? '#22c55e' : '#ef4444';
+        return `<div class="spark">${h.map(v => {
+            const ht = Math.max(3, Math.round(((v-mn)/rng)*18));
+            return `<span style="height:${ht}px;background:${color}"></span>`;
+        }).join('')}</div>`;
+    }
+
+    function renderTable(list) {
+        const tb = document.getElementById('tBody');
+        if (!list.length) { tb.innerHTML = '<tr><td colspan="14" class="empty">No stocks match</td></tr>'; return; }
+        tb.innerHTML = list.map(s => {
+            const up  = s.status === 'UP';
+            const cls = up ? 'up' : 'dn';
+            const sgn = up ? '+' : '';
+            return `<tr>
+              <td class="sym-cell"><div class="sym">${s.symbol}</div><div class="ikey">${s.instrumentKey||''}</div></td>
+              <td class="num">${fmt(s.currentPrice)}</td>
+              <td class="num ${cls}">${sgn}${fmt(s.change)}</td>
+              <td class="num ${cls}">${sgn}${s.changePercent.toFixed(2)}%</td>
+              <td class="num ${s.roc >= 0 ? 'up' : 'dn'}">${(s.roc || 0).toFixed(2)}%</td>
+              <td class="num" style="color:var(--accent)">${(s.atr || 0).toFixed(2)}</td>
+              <td class="num">${(s.adx || 0).toFixed(1)}</td>
+              <td class="num">${fmt(s.highPrice)}</td>
+              <td class="num">${fmt(s.lowPrice)}</td>
+              <td class="num">${fmt(s.openPrice)}</td>
+              <td class="num">${fmt(s.closePrice)}</td>
+              <td class="num">${fmtV(s.volume || 0)}</td>
+              <td><span class="badge ${s.status}">${s.status}</span></td>
+              <td>${spark(s.symbol, up)}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    function renderMiniPanels() {
+        const sorted  = [...all].sort((a,b) => b.changePercent - a.changePercent);
+        const gainers = sorted.filter(s => s.changePercent > 0).slice(0,5);
+        const losers  = [...all].sort((a,b) => a.changePercent - b.changePercent).filter(s => s.changePercent < 0).slice(0,5);
+
+        const maxG = gainers.length ? Math.abs(gainers[0].changePercent) : 1;
+        const maxL = losers.length  ? Math.abs(losers[losers.length-1].changePercent) : 1;
+
+        document.getElementById('gCount').textContent = gainers.length + ' stocks';
+        document.getElementById('lCount').textContent = losers.length  + ' stocks';
+
+        document.getElementById('gList').innerHTML = gainers.length ? gainers.map(s=>`
+            <div class="mini-row">
+              <div class="mini-sym"><b>${s.symbol}</b><small>${fmt(s.currentPrice)}</small></div>
+              <div class="bar-bg"><div class="bar-fill up" style="width:${Math.round(s.changePercent/maxG*100)}%"></div></div>
+              <div class="mini-pct up">+${s.changePercent.toFixed(2)}%</div>
+            </div>`).join('') : '<div class="empty">No gainers</div>';
+
+        document.getElementById('lList').innerHTML = losers.length ? losers.map(s=>`
+            <div class="mini-row">
+              <div class="mini-sym"><b>${s.symbol}</b><small>${fmt(s.currentPrice)}</small></div>
+              <div class="bar-bg"><div class="bar-fill dn" style="width:${Math.round(Math.abs(s.changePercent)/maxL*100)}%"></div></div>
+              <div class="mini-pct dn">${s.changePercent.toFixed(2)}%</div>
+            </div>`).join('') : '<div class="empty">No losers</div>';
+    }
+
+    function renderKeys() {
+        const q = (document.getElementById('keySearch').value||'').toLowerCase();
+        const list = all.filter(s => !q || s.symbol.toLowerCase().includes(q) || (s.instrumentKey||'').toLowerCase().includes(q));
+        document.getElementById('keyGrid').innerHTML = list.length ? list.map(s=>`
+            <div class="key-item">
+              <div class="ks">${s.symbol}</div>
+              <div class="kv">${s.instrumentKey||'—'}</div>
+              <button class="copy-btn" onclick="copyKey('${s.instrumentKey}',this)">copy key</button>
+            </div>`).join('') : '<div style="padding:1rem;color:var(--muted);font-size:13px">No matches</div>';
+    }
+
+    function copyKey(key, btn) {
+        navigator.clipboard.writeText(key).then(() => {
+            btn.textContent = 'copied!';
+            setTimeout(() => btn.textContent = 'copy key', 1500);
+        });
+    }
+
+    function badge(type, text) {
+        const el = document.getElementById('connBadge');
+        if (el) {
+            el.textContent = text;
+            el.className = 'conn-badge ' + type;
+        }
+    }
+</script>
+</body>
+</html>
