@@ -1,24 +1,33 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Java Backend Test</title>
+    <title>Railway Java App</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <h1>Java Backend Connection 🔥</h1>
-    <button onclick="loadData()">Call Backend</button>
+<h1>Java + Railway 🚀</h1>
+<button onclick="loadData()">Call Backend</button>
 
-    <p id="result">Waiting...</p>
+<p id="result">Waiting...</p>
 
-    <script>
-        async function loadData() {
-            const res = await fetch('/api');
-            const data = await res.json();
+<script>
+async function loadData() {
+    try {
+        const res = await fetch('/api');
 
-            document.getElementById("result").innerText = data.message;
+        if (!res.ok) {
+            throw new Error("Status: " + res.status);
         }
-    </script>
+
+        const data = await res.json();
+        document.getElementById("result").innerText = data.message;
+
+    } catch (err) {
+        document.getElementById("result").innerText = "Error: " + err.message;
+    }
+}
+</script>
 
 </body>
 </html>
