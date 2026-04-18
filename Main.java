@@ -6,20 +6,17 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
 
-        int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
+        String portEnv = System.getenv("PORT");
+        int port = (portEnv != null) ? Integer.parseInt(portEnv) : 8080;
 
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
 
-        // ✅ ONLY ROOT
         server.createContext("/", exchange -> {
-
             String response = "Hello from Java 🚀";
 
             exchange.sendResponseHeaders(200, response.length());
-
-            OutputStream os = exchange.getResponseBody();
-            os.write(response.getBytes());
-            os.close();
+            exchange.getResponseBody().write(response.getBytes());
+            exchange.close();
         });
 
         server.start();
