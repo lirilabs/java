@@ -1,24 +1,22 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Java App</title>
+    <title>Java Backend Test</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="container">
-        <h1>Java + HTML App 🚀</h1>
+    <h1>Java Backend Connection 🔥</h1>
+    <button onclick="loadData()">Call Backend</button>
 
-        <button onclick="callAPI()">Call Backend</button>
-
-        <p id="output">Waiting...</p>
-    </div>
+    <p id="result">Waiting...</p>
 
     <script>
-        async function callAPI() {
+        async function loadData() {
             const res = await fetch('/api');
             const data = await res.json();
-            document.getElementById('output').innerText = data.message;
+
+            document.getElementById("result").innerText = data.message;
         }
     </script>
 
