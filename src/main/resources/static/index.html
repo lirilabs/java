@@ -563,11 +563,12 @@
         let filter = 'ALL';
         let ws = null;
 
-        // Dynamic URL detection for production hosting
+        // PATH MUST MATCH StockWebSocketHandler mapping in Java config
+        // Dynamically detect the host and protocol for Railway or Local use
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const host = window.location.host;
         const WS_URL = `${protocol}//${host}/ws/stocks/websocket`;
-        const REST_URL = `${window.location.protocol}//${host}/api/stocks`;
+        const REST_URL = '/api/stocks';
 
         connect();
 
