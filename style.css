@@ -1,24 +1,20 @@
 body {
     font-family: Arial;
-    background: #0f172a;
-    color: white;
     text-align: center;
-}
-
-.container {
+    background: #111;
+    color: white;
     margin-top: 100px;
 }
 
 button {
     padding: 10px 20px;
-    background: #22c55e;
+    font-size: 18px;
+    background: #00ffcc;
     border: none;
-    color: white;
-    font-size: 16px;
     cursor: pointer;
     border-radius: 5px;
 }
 
 button:hover {
-    background: #16a34a;
+    background: #00cc99;
 }
