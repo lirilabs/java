@@ -1,63 +1,35 @@
-import com.sun.net.httpserver.*;
-import java.io.*;
+import com.sun.net.httpserver.HttpServer;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.nio.file.Files;
 
 public class Main {
 
     public static void main(String[] args) throws Exception {
 
         int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
+
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
 
-        server.createContext("/", exchange -> {
-            String path = exchange.getRequestURI().getPath();
+        // ✅ API only
+        server.createContext("/api", exchange -> {
 
-            // ✅ HANDLE API FIRST
-            if (path.equals("/api")) {
-                String response = "{\"message\": \"Railway API working 🚀\"}";
+            // CORS (allow frontend access)
+            exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
 
-                exchange.getResponseHeaders().add("Content-Type", "application/json");
-                exchange.sendResponseHeaders(200, response.getBytes().length);
-
-                OutputStream os = exchange.getResponseBody();
-                os.write(response.getBytes());
-                os.close();
+            if (exchange.getRequestMethod().equalsIgnoreCase("OPTIONS")) {
+                exchange.sendResponseHeaders(204, -1);
                 return;
             }
 
-            // ✅ Serve index.html
-            if (path.equals("/")) {
-                path = "/index.html";
-            }
+            String response = "Hello from Java 🚀";
 
-            File file = new File("." + path);
-
-            if (!file.exists()) {
-                String response = "404 Not Found";
-                exchange.sendResponseHeaders(404, response.length());
-                exchange.getResponseBody().write(response.getBytes());
-                exchange.close();
-                return;
-            }
-
-            String contentType = getContentType(path);
-            byte[] bytes = Files.readAllBytes(file.toPath());
-
-            exchange.getResponseHeaders().add("Content-Type", contentType);
-            exchange.sendResponseHeaders(200, bytes.length);
-            exchange.getResponseBody().write(bytes);
-            exchange.close();
+            exchange.sendResponseHeaders(200, response.length());
+            OutputStream os = exchange.getResponseBody();
+            os.write(response.getBytes());
+            os.close();
         });
 
         server.start();
-        System.out.println("Server running on port " + port);
-    }
-
-    private static String getContentType(String path) {
-        if (path.endsWith(".html")) return "text/html";
-        if (path.endsWith(".css")) return "text/css";
-        if (path.endsWith(".js")) return "application/javascript";
-        return "text/plain";
+        System.out.println("Backend running on port " + port);
     }
 }
