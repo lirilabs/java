@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Java App</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <h1>Java + HTML App 🚀</h1>
+
+        <button onclick="callAPI()">Call Backend</button>
+
+        <p id="output">Waiting...</p>
+    </div>
+
+    <script>
+        async function callAPI() {
+            const res = await fetch('/api');
+            const data = await res.json();
+            document.getElementById('output').innerText = data.message;
+        }
+    </script>
+
+</body>
+</html>
