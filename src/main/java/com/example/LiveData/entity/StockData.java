@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 @Entity
 @Table(name = "stocks")
-// This ensures the JSON output follows your exact requested order
+
 @JsonPropertyOrder({ "currentPrice", "volume", "atr", "adx", "roc", "timestamp" })
 public class StockData {
 
