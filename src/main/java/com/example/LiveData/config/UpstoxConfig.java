@@ -14,26 +14,18 @@ public class UpstoxConfig {
     @Value("${upstox.access.token}")
     private String accessToken;
 
-    // Comma-separated instrument keys — supports 200+ stocks
     @Value("${upstox.instruments}")
     private String instruments;
 
-    // Upstox allows max ~500 keys per request, but we chunk at 100 to be safe
+   
     @Value("${upstox.chunk.size:100}")
     private int chunkSize;
 
     public String getAccessToken() { return accessToken; }
 
-    /**
-     * Returns all instrument keys as a single comma-separated string.
-     * Useful for small lists (< 100 stocks).
-     */
+   
     public String getInstruments() { return instruments; }
 
-    /**
-     * Returns instrument keys split into chunks of chunkSize.
-     * Use this when tracking 100+ stocks to avoid URL-length limits.
-     */
     public List<List<String>> getInstrumentChunks() {
         List<String> all = Arrays.asList(instruments.split(","));
         List<List<String>> chunks = new java.util.ArrayList<>();
