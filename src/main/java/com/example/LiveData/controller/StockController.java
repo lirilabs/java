@@ -22,7 +22,7 @@ public class StockController {
         return stockService.getLatestStocks();
     }
 
-    // Correctly calls the search method in StockService
+  
     @GetMapping("/search")
     public List<StockData> search(@RequestParam String q) {
         return stockService.search(q);
