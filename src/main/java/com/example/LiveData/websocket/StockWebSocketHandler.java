@@ -30,7 +30,7 @@ public class StockWebSocketHandler extends TextWebSocketHandler {
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) {
-        // Handle ping from client — reply with pong to keep connection alive
+        
         if ("ping".equalsIgnoreCase(message.getPayload().trim())) {
             try {
                 if (session.isOpen()) {
@@ -49,10 +49,7 @@ public class StockWebSocketHandler extends TextWebSocketHandler {
         try { if (session.isOpen()) session.close(); } catch (IOException ignored) {}
     }
 
-    /**
-     * Broadcasts JSON string to all connected clients.
-     * Removes dead sessions automatically.
-     */
+   
     public void broadcastStockData(String json) {
         TextMessage message = new TextMessage(json);
         sessions.removeIf(session -> {
@@ -67,7 +64,7 @@ public class StockWebSocketHandler extends TextWebSocketHandler {
         });
     }
 
-    /** Returns number of currently connected WebSocket clients. */
+   
     public int getConnectedClientCount() {
         return sessions.size();
     }
