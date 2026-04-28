@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface StockRepository extends JpaRepository<StockData, String> {
-    // Leave this empty. JpaRepository already provides saveAll(), save(), findById(), etc.
+ 
 }
