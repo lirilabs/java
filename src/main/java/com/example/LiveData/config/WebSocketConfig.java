@@ -14,9 +14,9 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        // Registering the exact path used by the frontend
+        
         registry.addHandler(stockWebSocketHandler, "/ws/stocks/websocket")
                 .setAllowedOrigins("*");
-        // DO NOT add .withSockJS() here as the frontend uses the native WebSocket API
+       
     }
 }
