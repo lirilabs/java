@@ -107,7 +107,7 @@ public class StockService {
             double close = (netChangeApi != 0) ? (ltp - netChangeApi) : node.path("ohlc").path("close").asDouble();
             if (close == 0) close = ltp;
 
-            // FIX: Using LTP for history ensures ADX sees 5-second movements
+            
             priceHistoryMap.putIfAbsent(instrumentKey, new LinkedList<>());
             LinkedList<double[]> history = priceHistoryMap.get(instrumentKey);
             history.add(new double[]{ltp, ltp, ltp});
@@ -170,7 +170,7 @@ public class StockService {
 
     public List<StockData> getLatestStocks() { return new ArrayList<>(stockCache.values()); }
 
-    // This method resolves the "cannot find symbol" error
+    
     public List<StockData> search(String query) {
         if (query == null || query.isEmpty()) return getLatestStocks();
         String q = query.toLowerCase();
