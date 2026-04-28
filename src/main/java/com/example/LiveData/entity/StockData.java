@@ -15,7 +15,6 @@ public class StockData {
     private String instrumentKey;
     private String symbol;
 
-    // --- Requested Order Fields ---
     private double currentPrice;
     private long volume;
     private double atr;
@@ -23,7 +22,7 @@ public class StockData {
     private double roc;
     private String timestamp;
 
-    // --- Additional Price Data ---
+  
     private double highPrice;
     private double lowPrice;
     private double openPrice;
@@ -32,11 +31,11 @@ public class StockData {
     private double changePercent;
     private String status;
 
-    // Standard no-args constructor for Hibernate
+   
     public StockData() {
     }
 
-    // -------- Getters & Setters --------
+ 
 
     public String getInstrumentKey() { return instrumentKey; }
     public void setInstrumentKey(String instrumentKey) { this.instrumentKey = instrumentKey; }
